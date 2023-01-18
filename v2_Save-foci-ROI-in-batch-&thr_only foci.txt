@@ -1,0 +1,81 @@
+//Laura Martin 18.01.2023 Save ROIs of foci inside nuclei as single roi.zip
+
+//Version 2.0 in which the roi of the entire nucleus (input) IS NOT SAVED in the .zip of the output
+//Only .roi of foci are saved.
+
+//Put the macro.txt in in the folder where you have the input files.
+//Run the macro.
+//Select in the following order: an input folder with the .tiff of the nuclei, an input folder of the corresponding single nuclei .roi, and an output folder where the .zip will be automatically saved.
+//Foci are identified by thresholding the intensity signal to the 0.15%. If you want to change the percentage just change the value in the corresponding line inside the code.
+//The output .zip file will include also the .roi of the entire nucleus.
+
+macro "Save foci ROI in batch - percentage" { 
+	
+                      //select image, ROI, and output folders
+	dir1 = getDirectory("Choose an Image Directory "); 
+        dir2 = getDirectory("Choose an ROI file Directory"); 
+        dir3 = getDirectory("Choose an Output Directory"); 
+		setBatchMode( false )
+        list = getFileList(dir1); 
+        Array.sort(list);
+        list2 = getFileList(dir2); 
+        Array.sort(list2);
+         for (i=0; i<list.length; i++) { 
+                path = dir1+list[i]; 
+                showProgress(i, list.length); 
+                open(path); 
+                       //get the name of the image to use it for the roi.tiff
+		           imageTitle=getTitle();
+                       //get rid of .tiff extension
+                           imageTitle=substring(imageTitle,0,lengthOf(imageTitle)-4);
+				
+			//load ROIs 
+            path2 = dir2+list2[i];  
+
+	    roiTitle=getTitle();
+
+
+			roiManager("Open", path2); 
+				n = roiManager("count");
+                        //loop for every nucleus
+  				for (j=0; j<n; j++) {
+      				roiManager("select", j);
+                                    roiManager("Show All");
+                                    roiManager("Show None");
+                                    setOption("ScaleConversions", true);
+                                    run("8-bit");
+                                    percentage = 0.0015;
+                                    target = (1-percentage)*getWidth()*getHeight();
+                                    nBins = 256;
+                                    getHistogram(values,counts,nBins);
+                                    sum = 0; threshold = -1;
+                                       for(k=0; k<nBins; k++){
+                                         sum += counts[k];
+                                         if( (sum >= target) & (threshold < 0) ){ threshold = k; }                                              }
+                                       setThreshold(threshold,255);
+                                run("Analyze Particles...", "display add");
+                                path3 = dir3;
+
+                                roiManager("select", roiTitle);
+                                roiManager("Delete");
+
+                                roiManager("Save", path3+imageTitle+"_"+".zip");
+                                close();}
+
+       //clear and close ROI manager					
+				roiManager("reset")
+        //                    close(); 
+                                
+     //closes main image window 
+                if (isOpen("Exception")) { 
+                 selectWindow("Exception"); 
+                              run("Close");           
+                                        
+                                        } 
+
+         }
+selectWindow("Results");
+run("Close");
+selectWindow("ROI Manager");
+run("Close");
+}
