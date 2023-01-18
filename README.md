@@ -1,4 +1,4 @@
-# v2_Save-foci-ROI-in-batch-percentage_only-foci
+# v2_Save-foci-ROI-in-batch-%thr_only-foci
 
 Put the macro.txt in in the folder where you have the input files.
 
